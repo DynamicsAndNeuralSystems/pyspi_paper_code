@@ -1,0 +1,21 @@
+#!/bin/bash
+#PBS -j oe
+#PBS -V
+
+cd "$PBS_O_WORKDIR"
+
+# Add any code needed to load the anaconda module on your HPC cluster here
+
+# Activate the desired conda environment
+conda activate $conda_env
+
+# Call R script to analyse hctsa results for DMN components
+cmd="python3 -W ignore::UserWarning:joblib.parallel:775 /path/to/code/on/cluster/classification/classify.py --dataset_ID $dataset_ID"
+
+$cmd
+exit
+
+# Verify the host on which the job ran
+hostname
+
+
