@@ -278,7 +278,7 @@ if (!file.exists(glue("{data_path}/Rest_vs_Film_fMRI/processed_data/Rest_vs_Film
 fMRI_metadata <- fMRI_ts_data_7_networks %>%
   ungroup() %>%
   distinct(Unique_ID, Sample_ID, Scan_Type, Session_Number)
-feather::write_feather(fMRI_metadata, glue("{data_path}/Rest_Video_fMRI_metadata.feather"))
+feather::write_feather(fMRI_metadata, glue("{data_path}/Rest_vs_Film_fMRI_metadata.feather"))
 
 # Split by group
 fMRI_TS_data_split  <- fMRI_ts_data_7_networks %>%

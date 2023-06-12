@@ -1,3 +1,6 @@
+# We used patch_sklearn to apply the Intel Extension for Scikit-learn
+# cf. https://intel.github.io/scikit-learn-intelex/
+# These lines can be commented out to disable this patch 
 from sklearnex import patch_sklearn
 patch_sklearn()
 
@@ -8,25 +11,19 @@ from math import floor, ceil
 import matplotlib.pyplot as plt
 import seaborn as sns
 import argparse
-
-# from Oliver
 import numpy as np
 import pandas as pd
 from copy import copy
-
-# Classifier stuff
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit, permutation_test_score, LeaveOneGroupOut
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
+import matplotlib as mpl
 
 import warnings
 warnings.filterwarnings("ignore")
-
-import matplotlib as mpl
-# mpl.use('TkAgg') # uncomment if you're having problems with multithreading
 
 ###############################################################################
 # Helper functions
@@ -332,21 +329,21 @@ SPI_directionality = pd.read_csv("../data/SPI_directionality.csv") # Change to w
 
 # Command-line arguments to parse
 parser = argparse.ArgumentParser(description='Process inputs for pairwise data preparation.')
+parser.add_argument('--data_path', default="../data/", dest='data_path')
 parser.add_argument('--dataset_ID', default="BasicMotions", dest='dataset_ID')
 args = parser.parse_args()
+data_path = args.data_path
 dataset_ID = args.dataset_ID
 
-data_path = f"/path/to/data/on/cluster/{dataset_ID}/" # Change this to the path to the data on the cluster
-
 if dataset_ID == "Rest_vs_Film_fMRI": 
-    pyspi_data = (pd.read_feather(f"{data_path}/processed_data/{dataset_ID}_pyspi_filtered_for_classification.feather")
+    pyspi_data = (pd.read_feather(f"{data_path}/${dataset_ID}/processed_data/{dataset_ID}_pyspi_filtered_for_classification.feather")
                        .rename(columns = {"Sample_ID": "Subject_ID",
                                           "Unique_ID": "Sample_ID"})
                        )
-    metadata = pd.read_feather(f"{data_path}/{dataset_ID}_metadata.feather")
+    metadata = pd.read_feather(f"{data_path}/${dataset_ID}/{dataset_ID}_metadata.feather")
 else:
-    pyspi_data = pd.read_feather(f"{data_path}/processed_data/{dataset_ID}_pyspi_filtered_for_classification.feather")
-    metadata = pd.read_feather(f"{data_path}/{dataset_ID}_sample_metadata.feather")
+    pyspi_data = pd.read_feather(f"{data_path}/${dataset_ID}/processed_data/{dataset_ID}_pyspi_filtered_for_classification.feather")
+    metadata = pd.read_feather(f"{data_path}/${dataset_ID}/{dataset_ID}_sample_metadata.feather")
 
 classes = pyspi_data.group.unique().tolist()
 
@@ -360,7 +357,7 @@ num_nulls = 100
 
 ###############################################################################
 # Run classifier for given dataset and save results
-if not os.path.isfile(f"{data_path}/processed_data/{dataset_ID}_main_SPI_wise_acc.feather"):
+if not os.path.isfile(f"{data_path}/${dataset_ID}/processed_data/{dataset_ID}_main_SPI_wise_acc.feather"):
     print("Running SVMs for {dataset_ID}")
     if dataset_ID=="BasicMotions":
         main_SPI_wise_res, null_SPI_wise_res, main_full_res, null_full_res = process_dataset(pyspi_data = pyspi_data,
@@ -394,7 +391,7 @@ if not os.path.isfile(f"{data_path}/processed_data/{dataset_ID}_main_SPI_wise_ac
                                                                                     num_resamples = num_resamples,
                                                                                     num_nulls=num_nulls)
         
-    main_SPI_wise_res.to_feather(f"{data_path}/processed_data/{dataset_ID}_main_SPI_wise_acc.feather")
-    null_SPI_wise_res.to_feather(f"{data_path}/processed_data/{dataset_ID}_null_SPI_wise_acc.feather")
-    main_full_res.to_feather(f"{data_path}/processed_data/{dataset_ID}_main_full_acc.feather")
-    null_full_res.to_feather(f"{data_path}/processed_data/{dataset_ID}_null_full_acc.feather")
+    main_SPI_wise_res.to_feather(f"{data_path}/${dataset_ID}/processed_data/{dataset_ID}_main_SPI_wise_acc.feather")
+    null_SPI_wise_res.to_feather(f"{data_path}/${dataset_ID}/processed_data/{dataset_ID}_null_SPI_wise_acc.feather")
+    main_full_res.to_feather(f"{data_path}/${dataset_ID}/processed_data/{dataset_ID}_main_full_acc.feather")
+    null_full_res.to_feather(f"{data_path}/${dataset_ID}/processed_data/{dataset_ID}_null_full_acc.feather")

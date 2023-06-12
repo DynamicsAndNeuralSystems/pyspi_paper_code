@@ -1,17 +1,11 @@
 library(tidyverse)
-library(theft)
 library(feather)
 library(glue)
 library(reticulate)
-library(cowplot)
-library(ggridges)
-theme_set(theme_cowplot())
-library(dendextend)
 library(grid)
-library(ComplexHeatmap)
 library(patchwork)
-library(ggseg)
-library(GGally)
+library(cowplot)
+theme_set(theme_cowplot())
 
 python_to_use <- "/path/to/your/preferred/installation/of/python3"
 reticulate::use_python(python_to_use)
@@ -34,9 +28,8 @@ list.append <- function (.data, ...)
 
 ################################################################################
 
-# Load SPI and module colours
-SPI_HClust_Modules <- read.csv("../data/SPI_modules.csv")
-SPI_Literature_Modules <- read.csv("../data/SPI_literature_categories.csv")
+# Load SPI information
+SPI_info <- read.csv("../data/SPI_info.csv")
 SPI_module_colours <- read.csv("../data/SPI_module_colours.csv") %>%
   dplyr::select(-X)
 
@@ -110,7 +103,6 @@ restfilm_null_SPI_wise_top_quantile <- quantile(restfilm_null_SPI_wise$Null_Accu
 
 ################################################################################
 # Function to calculate p-values relative to null
-bonferroni_alpha = 0.05 / 212
 calculate_p_values <- function(main_res, null_Accuracy_df) {
   null_acc <- null_Accuracy_df$Null_Accuracy
   p_res <- main_res %>%
@@ -143,124 +135,6 @@ restfilm_SPI_wise_p_values <- calculate_p_values(main_res = restfilm_main_SPI_wi
 
 restfilm_full_p_values <- calculate_p_values(main_res = restfilm_main_full_mean,
                                              null_Accuracy_df = restfilm_null_full)
-
-################################################################################
-# Plot example time-series per class
-icefire <- colorRampPalette(c("#C0E1D9", "#72A9CA", "#3875CF", "#42407A", 
-                              "#22222C", "#5D2935", "#D34B36", "#F29257", 
-                              "#FCC79C"))
-
-# BasicMotions
-set.seed(127)
-BasicMotions_random_samples <- BasicMotions_TS_data %>%
-  group_by(activity) %>%
-  sample_n(1) %>%
-  pull(Sample_ID) 
-BasicMotions_TS_data %>%
-  filter(Sample_ID %in% BasicMotions_random_samples) %>%
-  mutate(timepoint_num = as.factor(timepoint_num),
-         signal_z = case_when(signal_z > 2 ~ 2.5,
-                              signal_z < -2 ~ -2.5,
-                              T ~ signal_z),
-         Measurement = factor(Measurement, levels = rev(c("Accelerometer_x", "Accelerometer_y", "Accelerometer_z",
-                                                          "Gyroscope_x", "Gyroscope_y", "Gyroscope_z")))) %>%
-  rowwise() %>%
-  mutate(activity = ifelse(activity == "Standing", "Resting", as.character(activity))) %>%
-  ungroup() %>%
-  mutate(activity = factor(activity, levels = c("Resting", "Walking", "Running", "Badminton"))) %>%
-  ggplot(data=., mapping=aes(x=timepoint_num, y=Measurement, fill=signal_z)) +
-  geom_raster() +
-  facet_wrap(activity ~ ., ncol=1) +
-  theme_void() +
-  scale_color_gradientn(colors = icefire(50)) +
-  scale_fill_gradientn(colors = icefire(50)) +
-  theme(legend.position = "none",
-        panel.spacing = unit(0.12, "lines"),
-        strip.text.x = element_text(margin = margin(0, 4.4, 3, 4.4, "pt")),
-        panel.grid.major = element_blank())
-
-# SelfRegulationSCP1
-set.seed(127)
-EEG_random_samples <- EEG_TS_data %>%
-  group_by(Sample_ID, cortical) %>%
-  summarise(mean_z = mean(signal_z)) %>%
-  ungroup() %>%
-  group_by(cortical) %>%
-  filter(mean_z == max(mean_z) | mean_z == min(mean_z)) %>%
-  ungroup() %>%
-  filter(mean_z > 0 & cortical == "positivity" | mean_z < 0 & cortical == "negativity") %>%
-  pull(Sample_ID)
-EEG_TS_data %>%
-  filter(Sample_ID %in% EEG_random_samples,
-         timepoint_num < 500) %>%
-  mutate(timepoint_num = as.factor(timepoint_num)) %>%
-  ggplot(data=., mapping=aes(x=timepoint_num, y=rev(Channel), fill=signal_z)) +
-  geom_raster() +
-  facet_grid(cortical ~ .) +
-  theme_void() +
-  scale_color_gradientn(colors = icefire(50)) +
-  scale_fill_gradientn(colors = icefire(50)) +
-  theme(legend.position = "none",
-        panel.grid.major = element_blank(),
-        strip.text = element_blank())
-
-# Line plots
-EEG_TS_data %>%
-  filter(Sample_ID %in% EEG_random_samples,
-         timepoint_num < 500,
-         cortical == "positivity") %>%
-  ggplot(data=., mapping=aes(x=timepoint_num, y=signal_z, group=Channel, color=Channel)) +
-  facet_grid(Channel ~ ., scales="free") +
-  geom_line(linewidth=1) +
-  theme(legend.position="none") +
-  scale_color_manual(values = viridis::viridis(7)) +
-  theme_void() +
-  theme(legend.position = "none",
-        strip.text = element_blank())
-
-# Rest vs Video fMRI
-library(ggsegExtra)
-library(ggsegYeo2011)
-
-set.seed(27)
-restfilm_random_sample <- sample(unique(restfilm_metadata$Sample_ID), 1)
-restfilm_TS_data %>%
-  filter(Sample_ID %in% restfilm_random_sample,
-         Session_Number == "1",
-         Scan_Type == "movie",
-         timepoint<200) %>%
-  mutate(Yeo_7_Networks_Bilateral = case_when(Yeo_7_Networks_Bilateral == "DorsalAttention" ~ "Dorsal Attention",
-                                              Yeo_7_Networks_Bilateral == "VentralAttention" ~ "Salience / Ventral Attention",
-                                              T ~ Yeo_7_Networks_Bilateral)) %>%
-  ggplot(data=., mapping=aes(x=timepoint, y=Mean_BOLD_Signal, group=Yeo_7_Networks_Bilateral, color=Yeo_7_Networks_Bilateral)) +
-  facet_grid(Yeo_7_Networks_Bilateral ~ ., scales="free") +
-  geom_line(linewidth=1) +
-  theme(legend.position="none") +
-  scale_color_brain("yeo7", package="ggsegYeo2011") +
-  theme_void() +
-  theme(legend.position = "none",
-        panel.spacing = unit(0.02, "lines"),
-        strip.text = element_blank())
-ggsave(glue("{plot_path}/Rest_vs_Film_fMRI_Example_movie_TS.svg"), 
-       width=4, height=2, units="in", dpi=300)
-restfilm_TS_data %>%
-  filter(Sample_ID %in% restfilm_random_sample,
-         Session_Number == "1",
-         Scan_Type == "rest",
-         timepoint<200) %>%
-  mutate(Yeo_7_Networks_Bilateral = case_when(Yeo_7_Networks_Bilateral == "DorsalAttention" ~ "Dorsal Attention",
-                                              Yeo_7_Networks_Bilateral == "VentralAttention" ~ "Salience / Ventral Attention",
-                                              T ~ Yeo_7_Networks_Bilateral)) %>%
-  ggplot(data=., mapping=aes(x=timepoint, y=Mean_BOLD_Signal, group=Yeo_7_Networks_Bilateral, color=Yeo_7_Networks_Bilateral)) +
-  facet_grid(Yeo_7_Networks_Bilateral ~ ., scales="free") +
-  geom_line(linewidth=1) +
-  theme(legend.position="none") +
-  scale_color_brain("yeo7", package="ggsegYeo2011") +
-  theme_void() +
-  theme(legend.position = "none",
-        panel.spacing = unit(0.02, "lines"),
-        strip.text = element_blank())
-
 
 ################################################################################
 # Plot histograms
@@ -517,65 +391,3 @@ plot_hclust_modules(p_value_df = restfilm_SPI_wise_p_values,
                     null_quantile = 100*restfilm_null_SPI_wise_top_quantile,
                     ylab = "Average accuracy (%)",
                     full_SPI_acc = 100*restfilm_full_p_values$Mean_Accuracy)
-
-################################################################################
-# Plot Yeo atlas functional networks
-ggseg(atlas = yeo7, mapping = aes(fill = region), hemisphere="left", color="gray30") +
-  scale_fill_brain("yeo7", package = "ggsegYeo2011") +
-  theme_cowplot() +
-  labs(fill="Yeo 2011 Network") +
-  theme(axis.title = element_blank(),
-        axis.text = element_blank(),
-        axis.line = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "bottom") +
-  guides(fill = guide_legend(ncol = 1, title.position="top", title.hjust = 0.5))
-
-# Control and ventralattention only to show next to violin plot
-data.frame(region = c("Control", "Salience / Ventral Attention"),
-           fill = c("Control", "Salience / Ventral Attention")) %>%
-  ggplot() +
-  geom_brain(atlas = yeo7, mapping=aes(fill=fill), hemi="left", color="gray30") +
-  scale_fill_brain("yeo7", package = "ggsegYeo2011", na.value="white") +
-  theme_void() +
-  theme(legend.position="none")
-ggsave(glue("{plot_path}/Rest_vs_Film_Yeo2011_Control_VentralAttention.svg"), width=3, height=1, units="in", dpi=300)
-
-################################################################################
-# Compare film fMRI SPI performance to Pearson correlation
-restfilm_main_SPI_wise_mean %>%
-  filter(Mean_Accuracy > Mean_Accuracy[SPI=="cov_EmpiricalCovariance"]) %>%
-  write.csv(glue("{restfilm_data_path}/processed_data/SPIs_Beating_Pearson_Correlation.csv"),
-            row.names = FALSE)
-
-
-################################################################################
-# Comparing SPIs across datasets
-performance_across <- do.call(plyr::rbind.fill, list(BasicMotions_SPI_wise_p_values %>% mutate(Problem="Smartwatch activity"),
-                                                     EEG_SPI_wise_p_values %>% mutate(Problem="EEG cursor movement"),
-                                                     restfilm_SPI_wise_p_values %>% mutate(Problem="fMRI film"))) %>%
-  group_by(Problem) %>%
-  mutate(SPI_rank = rank(desc(Mean_Accuracy))) %>%
-  dplyr::select(Problem, SPI, SPI_rank, Mean_Accuracy:significant) 
-
-# Write to a CSV
-performance_across %>%
-  ungroup() %>% 
-  mutate(Problem = factor(Problem, levels = c("Smartwatch activity",
-                                              "EEG cursor movement",
-                                              "fMRI film"))) %>%
-  arrange(Problem, SPI_rank) %>%
-  write.csv("~/data/pyspi_paper/SPI_performance_across_problems.csv", row.names = F)
-
-performance_across %>%
-  dplyr::select(SPI, Problem, Mean_Accuracy) %>%
-  pivot_wider(id_cols = SPI, names_from = Problem, values_from = Mean_Accuracy) %>%
-  dplyr::select(-SPI) %>%
-  ggpairs(upper = list(continuous = wrap("cor", method= "spearman")))
-
-SPI_ranks_across <- performance_across %>%
-  ungroup() %>%
-  group_by(SPI) %>%
-  summarise(Mean_Rank = mean(SPI_rank),
-            SD_Rank = sd(SPI_rank),
-            max_diff = max(SPI_rank) - min(SPI_rank))

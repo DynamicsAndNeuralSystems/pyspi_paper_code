@@ -1,4 +1,3 @@
-Table S1 [SPI_info.csv]: Information about the 237 SPIs measured for the empirical similarity index construction and classification analysis, including directionality, literature category, and module.
+Table S1 [SPI_info.csv]: Information about the 237 SPIs measured for the empirical similarity index construction and classification analysis, including directionality, literature category, and module. Note: these SPIs refer to the pyspi 0.2.0 implementation applied to the empirical similarity index computations.
 Table S2 [SPIs_dropped_by_problem.csv]: The SPIs dropped due to numerical issues and/or constant values by classification problem.
-Table S3 [SPI_performance_across_problems.csv]: The cross-validated accuracy per SPI across the three classification case studies (smartwatch activity, EEG state, and fMRI film).
-Table S4 [SPIs_Beating_Pearson_Correlation.csv]: The SPIs that yielded higher cross-validated accuracy than the Pearson correlation coefficient for the film fMRI dataset.
+Table S3 [SPI_performance_across_problems.csv]: The cross-validated accuracy per SPI across the three classification case studies (smartwatch activity, EEG state, and fMRI film). Note: these SPIs refer to the pyspi 0.4.0 implementation applied to the classification case studies.

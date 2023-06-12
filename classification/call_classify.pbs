@@ -10,7 +10,7 @@ cd "$PBS_O_WORKDIR"
 conda activate $conda_env
 
 # Call R script to analyse hctsa results for DMN components
-cmd="python3 -W ignore::UserWarning:joblib.parallel:775 /path/to/code/on/cluster/classification/classify.py --dataset_ID $dataset_ID"
+cmd="python3 -W ignore::UserWarning:joblib.parallel:775 /path/to/code/on/cluster/classification/classify.py --data_path $data_path --dataset_ID $dataset_ID"
 
 $cmd
 exit
