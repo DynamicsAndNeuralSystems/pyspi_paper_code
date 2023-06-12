@@ -33,7 +33,7 @@ write_data_to_numpy <- function(sample_df) {
 
 # Download data to your repository if you don't already have it
 if (!file.exists(glue("{data_path}/BasicMotions/processed_data/BasicMotions_TS.feather"))) {
-  # Download zipped file that contains ARFF files
+  # Download zipped file that contains ARFF files + extract zipped contents
   BasicMotions_zip <- glue("{data_path}/BasicMotions.zip")
   download.file("http://www.timeseriesclassification.com/Downloads/BasicMotions.zip", BasicMotions_zip, mode="wb")
   unzip(BasicMotions_zip, exdir=glue("{data_path}/BasicMotions/arff_files/"))
@@ -106,6 +106,7 @@ np <- import("numpy")
 numpy_file_path <- as.character(glue("{data_path}/BasicMotions/numpy_files"))
 TAF::mkdir(numpy_file_path)
 
+# Write numpy files for each sample
 1:length(BasicMotions_split_sample) %>%
   purrr::map(~ write_data_to_numpy(sample_df = BasicMotions_split_sample[.x][[1]]))
 
@@ -226,6 +227,8 @@ if (!file.exists(glue("{data_path}/Rest_vs_Film_fMRI/processed_data/Rest_vs_Film
   unzip(Rest_vs_Film_fMRI_zip, exdir=glue("{data_path}/Rest_vs_Film_fMRI/time_series_files/"))
   
   # Function to process the input file with 114 parcellations and aggregate to the broader 7 Yeo networks
+  # input_filename: the .txt file containing the time-series data for 114 regions for a given subject ID, 
+  # scanning condition, and scanning session number
   process_data_file <- function(input_filename) {
     sample_ID <- str_split(input_filename, "[.]")[[1]][1]
     scan_type <- str_split(input_filename, "[.]")[[1]][2]
@@ -234,6 +237,7 @@ if (!file.exists(glue("{data_path}/Rest_vs_Film_fMRI/processed_data/Rest_vs_Film
     file_data <- read.table(glue("{data_path}/Rest_vs_Film_fMRI/time_series_files/{input_filename}"), sep=",") 
     colnames(file_data) = Yeo_parc_info$Full_Region_Name
     
+    # Read in the time-series data for the 114 parcellated regions and join with Yeo parcellation lookup table
     data_in_full_networks <- file_data %>%
       mutate(timepoint = row_number()) %>%
       pivot_longer(cols=c(-timepoint),
@@ -257,6 +261,7 @@ if (!file.exists(glue("{data_path}/Rest_vs_Film_fMRI/processed_data/Rest_vs_Film
     # Only take frames where all data is present
     filter(timepoint < 948)
   
+  # Aggregate the 114 parcellation regions to the overarching 7 Yeo functional networks
   fMRI_ts_data_7_networks <- fMRI_ts_data_full %>%
     group_by(Sample_ID, Scan_Type, Session_Number, Unique_ID, Yeo_7_Networks_Bilateral, timepoint) %>%
     summarise(Mean_BOLD_Signal = mean(BOLD_Signal, na.rm=T)) %>%

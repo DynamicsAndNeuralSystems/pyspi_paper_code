@@ -26,7 +26,7 @@ BM_data_path = "../data/BasicMotions/" # Change if you have your data stored els
 BM_output_data_path = BM_data_path + "processed_data/"
 BM_metadata = pd.read_feather(f"{BM_data_path}/BasicMotions_sample_metadata.feather")
 
-BM_pyspi_data = (pd.read_feather(f"{BM_output_data_path}/BasicMotions_pyspi_filtered.feather")
+BM_pyspi_data = (pd.read_feather(f"{BM_output_data_path}/BasicMotions_pyspi.feather")
                  .merge(BM_metadata, on='Sample_ID', how='left')
                  .query("SPI in @SPI_list")
                  .rename(columns={"activity": "group"}))
@@ -51,7 +51,7 @@ EEG_dataset_ID = "SelfRegulationSCP1"
 EEG_data_path = "../data/SelfRegulationSCP1/" # Change if you have your data stored elsewhere
 EEG_output_data_path = EEG_data_path + "processed_data/"
 EEG_metadata = pd.read_feather(f"{EEG_data_path}/SelfRegulationSCP1_sample_metadata.feather")
-EEG_pyspi_data = (pd.read_feather(f"{EEG_output_data_path}/SelfRegulationSCP1_pyspi_filtered.feather")
+EEG_pyspi_data = (pd.read_feather(f"{EEG_output_data_path}/SelfRegulationSCP1_pyspi.feather")
                   .merge(EEG_metadata, on="Sample_ID", how="left")
                  .query("SPI in @SPI_list")
                  .rename(columns={"cortical": "group"}))
@@ -76,7 +76,7 @@ fMRI_dataset_ID = "Rest_vs_Film_fMRI"
 fMRI_data_path = "../data/Rest_vs_Film_fMRI/" # Change if you have your data stored elsewhere
 fMRI_output_data_path = fMRI_data_path + "processed_data/"
 fMRI_metadata = pd.read_feather(f"{fMRI_data_path}/Rest_vs_Film_fMRI_metadata.feather")
-fMRI_pyspi_data = (pd.read_feather(f"{fMRI_output_data_path}/Rest_vs_Film_fMRI_pyspi_filtered.feather")
+fMRI_pyspi_data = (pd.read_feather(f"{fMRI_output_data_path}/Rest_vs_Film_fMRI_pyspi.feather")
                       .rename(columns = {"Sample_ID": "Unique_ID"})
                       .merge(fMRI_metadata, on="Unique_ID", how="left")
                       .query("SPI in @SPI_list")

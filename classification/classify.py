@@ -29,7 +29,28 @@ warnings.filterwarnings("ignore")
 # Helper functions
 
 def classify_by_SPI(pipe, SPI_name, SPI_data_x, class_labels, sample_IDs, train_prop=0.9, test_prop=0.1, train_num=None, test_num=None, LOOCV=False, num_resamples=30, num_nulls=100):
-    
+    '''
+    Fit a linear SVM classifier to the input feature matrix for a given SPI.
+
+            Parameters:
+                    pipe (sklearn.pipeline.Pipeline): Defined Pipeline object
+                    SPI_name (str): Path to the processed data folder where output should go
+                    SPI_data_x (np.array): Array of features for the given SPI
+                    class_labels (np.array): Array of class labels for the given feature matrix
+                    sample_IDs (np.array): Array of sample IDs for the given feature matrix
+                    train_prop (float): Proportion of data to use for training
+                    test_prop (float): Proportion of data to use for testing
+                    train_num (int): Number of samples to use for training; only used if train_prop is None
+                    test_num (int): Number of samples to use for testing; only used if test_prop is None
+                    LOOCV (bool): Whether to use leave one out cross validation
+                    num_resamples (int): Number of train/test resamples to apply
+                    num_nulls (int): Number of nulls to use for permutation testing
+
+            Returns:
+                    main_results (pd.DataFrame): DataFrame of accuracy results for the given SPI
+                    null_results (pd.DataFrame): DataFrame of null accuracy results for the given SPI
+    '''
+
     # Drop any features containing 100% NaN
     SPI_data_x[:,~np.isnan(SPI_data_x).any(axis=0)]
     
@@ -54,18 +75,19 @@ def classify_by_SPI(pipe, SPI_name, SPI_data_x, class_labels, sample_IDs, train_
 
     resampled_test_scores = []
     resample_indices = []
+    # Create num_resamples train/test splits and fit the SVM for each resample, measuring the accuracy per resample
     for i, (train_index, test_index) in enumerate(splitter.split(SPI_data_x, class_labels, groups=sample_IDs)):
         resample_indices.append(i+1)
-        # Split data
+        # Split data into train and test
         X_train, X_test = SPI_data_x[train_index], SPI_data_x[test_index]
         y_train, y_test = class_labels[train_index], class_labels[test_index]
 
-        # Fit and score
+        # Fit the pipeline and measure accuracy
         pipe.fit(X_train, y_train)
         accuracy_for_resample = accuracy_score(y_test, pipe.predict(X_test))
         resampled_test_scores.append(accuracy_for_resample)
 
-    # Fit real and null data
+    # Fit num_null null permutations 
     if LOOCV:
         real_avg_score, null_score, pvalue_real = permutation_test_score(pipe, 
                                                             SPI_data_x, 
@@ -84,11 +106,10 @@ def classify_by_SPI(pipe, SPI_name, SPI_data_x, class_labels, sample_IDs, train_
                                                                     n_permutations=num_nulls, 
                                                                     scoring="accuracy")
     
+    # Concatenate results into one dataframe for accuracy and one for null accuracy across resamples
     main_res_df = (pd.DataFrame(resampled_test_scores, columns=["Accuracy"])
                    .assign(Resample_Number = resample_indices)
                    .assign(SPI = SPI_name))
-    
-    # Create a real and null dataframe
     null_res_df = (pd.DataFrame(null_score.T, columns=["Null_Accuracy"])
                    .assign(SPI = SPI_name))
                 
@@ -96,7 +117,27 @@ def classify_by_SPI(pipe, SPI_name, SPI_data_x, class_labels, sample_IDs, train_
 
 # Define function to run classification across all SPIs
 def classify_across_all_SPIs(pipe, full_pyspi_data_x, class_labels, sample_IDs, train_prop=0.9, test_prop=0.1, train_num=None, test_num=None, LOOCV=False, num_resamples=30, num_nulls=100):
-    
+    '''
+    Fit a linear SVM classifier to the input feature matrix for all SPIs combined.
+
+            Parameters:
+                    pipe (sklearn.pipeline.Pipeline): Defined Pipeline object
+                    full_pyspi_data_x (np.array): Array of features for all SPIs combined
+                    class_labels (np.array): Array of class labels for the given feature matrix
+                    sample_IDs (np.array): Array of sample IDs for the given feature matrix
+                    train_prop (float): Proportion of data to use for training
+                    test_prop (float): Proportion of data to use for testing
+                    train_num (int): Number of samples to use for training; only used if train_prop is None
+                    test_num (int): Number of samples to use for testing; only used if test_prop is None
+                    LOOCV (bool): Whether to use leave one out cross validation
+                    num_resamples (int): Number of train/test resamples to apply
+                    num_nulls (int): Number of nulls to use for permutation testing
+
+            Returns:
+                    main_results (pd.DataFrame): DataFrame of accuracy results for all SPIs combined
+                    null_results (pd.DataFrame): DataFrame of null accuracy results for all SPIs combined
+    '''
+        
     # Drop any features containing 100% NaN
     full_pyspi_data_x[:,~np.isnan(full_pyspi_data_x).any(axis=0)]
     
@@ -121,18 +162,19 @@ def classify_across_all_SPIs(pipe, full_pyspi_data_x, class_labels, sample_IDs, 
 
     resampled_test_scores = []
     resample_indices = []
+    # Create num_resamples train/test splits and fit the SVM for each resample, measuring the accuracy per resample
     for i, (train_index, test_index) in enumerate(splitter.split(full_pyspi_data_x, class_labels, groups=sample_IDs)):
         resample_indices.append(i+1)
-        # Split data
+        # Split data into train and test
         X_train, X_test = full_pyspi_data_x[train_index], full_pyspi_data_x[test_index]
         y_train, y_test = class_labels[train_index], class_labels[test_index]
 
-        # Fit and score
+        # Fit the pipeline and measure accuracy
         pipe.fit(X_train, y_train)
         accuracy_for_resample = accuracy_score(y_test, pipe.predict(X_test))
         resampled_test_scores.append(accuracy_for_resample)
     
-    # Fit real and null data
+    # Fit num_null null permutations 
     if LOOCV:
         real_score, null_score, pvalue_real = permutation_test_score(pipe, 
                                                                     full_pyspi_data_x, 
@@ -151,7 +193,7 @@ def classify_across_all_SPIs(pipe, full_pyspi_data_x, class_labels, sample_IDs, 
                                                                     n_permutations=num_nulls, 
                                                                     scoring="accuracy")
     
-    # Create a real and null dataframe
+    # Concatenate results into one dataframe for accuracy and one for null accuracy across resamples
     main_res_df = (pd.DataFrame(resampled_test_scores, columns=["Accuracy"])
                    .assign(Resample_Number = resample_indices))
     null_res_df = pd.DataFrame(null_score.T, columns=["Null_Accuracy"])
@@ -159,8 +201,29 @@ def classify_across_all_SPIs(pipe, full_pyspi_data_x, class_labels, sample_IDs, 
     return main_res_df, null_res_df
 
 # Define function to iterate over SPIs and measure classification  accuracy
-def process_dataset(pyspi_data, pipe, SPI_directionality, study_metadata, by_subject=False, train_prop=0.9, test_prop=0.1, train_num=None, test_num=None, LOOCV=False, num_resamples=30, num_nulls=1000):
-    
+def process_dataset(pyspi_data, pipe, SPI_directionality, study_metadata, train_prop=0.9, test_prop=0.1, train_num=None, test_num=None, by_subject=False, LOOCV=False, num_resamples=30, num_nulls=1000):
+    '''
+    Process an input dataset such that linear SVMs are fit to each SPI individually and to all SPIs combined.
+
+            Parameters:
+                    pyspi_data (pd.DataFrame): DataFrame containing all pyspi results for a given dataset
+                    pipe (sklearn.pipeline.Pipeline): Defined Pipeline object
+                    SPI_directionality (pd.DataFrame): DataFrame containing SPI directionality information
+                    study_metadata (pd.DataFrame): DataFrame containing study metadata for a given dataset
+                    train_prop (float): Proportion of data to use for training
+                    test_prop (float): Proportion of data to use for testing
+                    train_num (int): Number of samples to use for training; only used if train_prop is None
+                    test_num (int): Number of samples to use for testing; only used if test_prop is None
+                    by_subject (bool): Whether or not to fit leave-one-subject-out cross validation
+                    LOOCV (bool): Whether to use leave one out cross validation
+                    num_resamples (int): Number of train/test resamples to apply
+                    num_nulls (int): Number of nulls to use for permutation testing
+
+            Returns:
+                    main_results (pd.DataFrame): DataFrame of accuracy results for all SPIs combined
+                    null_results (pd.DataFrame): DataFrame of null accuracy results for all SPIs combined
+    '''
+        
     # Define SPIs
     SPIs = pyspi_data.SPI.unique().tolist()
 

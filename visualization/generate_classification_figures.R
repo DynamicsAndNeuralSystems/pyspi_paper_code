@@ -42,18 +42,21 @@ BasicMotions_pyspi_data = pyarrow_feather$read_feather(glue("{BasicMotions_data_
 BasicMotions_classes = as.character(unique(BasicMotions_pyspi_data$group))
 
 BasicMotions_main_SPI_wise <- pyarrow_feather$read_feather(glue("{BasicMotions_data_path}/processed_data/BasicMotions_main_SPI_wise_acc.feather"))
+# Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 BasicMotions_main_SPI_wise_mean <- BasicMotions_main_SPI_wise %>%
   group_by(SPI) %>%
   summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 BasicMotions_null_SPI_wise <- pyarrow_feather$read_feather(glue("{BasicMotions_data_path}/processed_data/BasicMotions_null_SPI_wise_acc.feather"))
 BasicMotions_main_full <- pyarrow_feather$read_feather(glue("{BasicMotions_data_path}/processed_data/BasicMotions_main_full_acc.feather"))
+
+# Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 BasicMotions_main_full_mean <- BasicMotions_main_full %>%
   summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 BasicMotions_null_full <- pyarrow_feather$read_feather(glue("{BasicMotions_data_path}/processed_data/BasicMotions_null_full_acc.feather"))
-BasicMotions_null_SPI_wise_top_quantile <- quantile(BasicMotions_null_SPI_wise$Null_Accuracy, probs = c(1-(0.05/212)))
 
+#############################################
 # SelfRegulationSCP1
 EEG_data_path <- "../data/pyspi_paper/SelfRegulationSCP1" # Change this to wherever you store your data for this repo
 EEG_metadata = pyarrow_feather$read_feather(glue("{EEG_data_path}/SelfRegulationSCP1_sample_metadata.feather"))
@@ -64,18 +67,22 @@ EEG_pyspi_data = pyarrow_feather$read_feather(glue("{EEG_data_path}/processed_da
 EEG_classes = as.character(unique(EEG_pyspi_data$group))
 
 EEG_main_SPI_wise <- pyarrow_feather$read_feather(glue("{EEG_data_path}/processed_data/SelfRegulationSCP1_main_SPI_wise_acc.feather"))
+
+# Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 EEG_main_SPI_wise_mean <- EEG_main_SPI_wise %>%
   group_by(SPI) %>%
   summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 EEG_null_SPI_wise <- pyarrow_feather$read_feather(glue("{EEG_data_path}/processed_data/SelfRegulationSCP1_null_SPI_wise_acc.feather"))
 EEG_main_full <- pyarrow_feather$read_feather(glue("{EEG_data_path}/processed_data/SelfRegulationSCP1_main_full_acc.feather"))
+
+# Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 EEG_main_full_mean <- EEG_main_full %>%
   summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 EEG_null_full <- pyarrow_feather$read_feather(glue("{EEG_data_path}/processed_data/SelfRegulationSCP1_null_full_acc.feather"))
-EEG_null_SPI_wise_top_quantile <- quantile(EEG_null_SPI_wise$Null_Accuracy, probs = c(1-(0.05/212)))
 
+#############################################
 # Rest versus movie watching fMRI
 restfilm_data_path <- "../data/pyspi_paper/Rest_vs_Film_fMRI/" # Change this to wherever you store your data for this repo
 restfilm_pyspi_data = pyarrow_feather$read_feather(glue("{restfilm_data_path}/processed_data/Rest_vs_Film_fMRI_pyspi_filtered.feather")) 
@@ -88,23 +95,31 @@ restfilm_pyspi_data <- restfilm_pyspi_data %>%
   dplyr::rename("group" = "Scan_Type")
 
 restfilm_main_SPI_wise <- pyarrow_feather$read_feather(glue("{restfilm_data_path}/processed_data/Rest_vs_Film_fMRI_main_SPI_wise_acc.feather"))
+# Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 restfilm_main_SPI_wise_mean <- restfilm_main_SPI_wise %>%
   group_by(SPI) %>%
   summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 restfilm_null_SPI_wise <- pyarrow_feather$read_feather(glue("{restfilm_data_path}/processed_data/Rest_vs_Film_fMRI_null_SPI_wise_acc.feather"))
 restfilm_main_full <- pyarrow_feather$read_feather(glue("{restfilm_data_path}/processed_data/Rest_vs_Film_fMRI_main_full_acc.feather"))
+
+# Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 restfilm_main_full_mean <- restfilm_main_full %>%
   summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 restfilm_null_full <- pyarrow_feather$read_feather(glue("{restfilm_data_path}/processed_data/Rest_vs_Film_fMRI_null_full_acc.feather"))
-restfilm_null_SPI_wise_top_quantile <- quantile(restfilm_null_SPI_wise$Null_Accuracy, probs = c(1-(0.05/212)))
-
 
 ################################################################################
-# Function to calculate p-values relative to null
-calculate_p_values <- function(main_res, null_Accuracy_df) {
-  null_acc <- null_Accuracy_df$Null_Accuracy
+calculate_p_values <- function(main_res, null_accuracy_df) {
+  # Calculate p-values relative to null and apply Bonferroni correction for multiple comparisons.
+  #         Parameters:
+  #                 main_res (data.frame): Dataframe with mean accuracy estimates
+  #                 null_accuracy_df (data.frame): Dataframe with null accuracy estimates
+
+  #         Returns:
+  #                 p_res (data.frame): Dataframe with p-values and Bonferroni-corrected p-values
+
+  null_acc <- null_accuracy_df$Null_Accuracy
   p_res <- main_res %>%
     rowwise() %>%
     mutate(p_value = 1 - sum(Mean_Accuracy > null_acc) / length(null_acc)) %>%
@@ -117,29 +132,43 @@ calculate_p_values <- function(main_res, null_Accuracy_df) {
 
 # BasicMotions
 BasicMotions_SPI_wise_p_values <- calculate_p_values(main_res = BasicMotions_main_SPI_wise_mean,
-                                           null_Accuracy_df = BasicMotions_null_SPI_wise)
+                                           null_accuracy_df = BasicMotions_null_SPI_wise)
 
 BasicMotions_full_p_values <- calculate_p_values(main_res = BasicMotions_main_full_mean,
-                                       null_Accuracy_df = BasicMotions_null_full)
+                                       null_accuracy_df = BasicMotions_null_full)
 
 # SelfRegulationSCP
 EEG_SPI_wise_p_values <- calculate_p_values(main_res = EEG_main_SPI_wise_mean,
-                                            null_Accuracy_df = EEG_null_SPI_wise)
+                                            null_accuracy_df = EEG_null_SPI_wise)
 
 EEG_full_p_values <- calculate_p_values(main_res = EEG_main_full_mean,
-                                        null_Accuracy_df = EEG_null_full)
+                                        null_accuracy_df = EEG_null_full)
 
 # Rest vs Film 
 restfilm_SPI_wise_p_values <- calculate_p_values(main_res = restfilm_main_SPI_wise_mean,
-                                                 null_Accuracy_df = restfilm_null_SPI_wise)
+                                                 null_accuracy_df = restfilm_null_SPI_wise)
 
 restfilm_full_p_values <- calculate_p_values(main_res = restfilm_main_full_mean,
-                                             null_Accuracy_df = restfilm_null_full)
+                                             null_accuracy_df = restfilm_null_full)
 
 ################################################################################
-# Plot histograms
-plot_SPI_histogram <- function(p_value_df, all_SPI_acc, num_bins, x_min, x_max, xlab, legend_x, legend_y, SPI_to_plot=NULL, SPI_to_plot_name=NULL) {
 
+plot_SPI_histogram <- function(p_value_df, all_SPI_acc, num_bins, x_min, x_max, xlab, legend_x, legend_y, SPI_to_plot=NULL, SPI_to_plot_name=NULL) {
+  # Plot histograms of SPI performance individually and with the combination of all SPIs.
+  #         Parameters:
+  #                 p_value_df (data.frame): Dataframe with p-values and Bonferroni-corrected p-values
+  #                 all_SPI_acc (double): Mean accuracy for all SPIs combined
+  #                 num_bins (int): Number of bins for histogram
+  #                 x_min (double): Minimum x value for histogram
+  #                 x_max (double): Maximum x value for histogram
+  #                 xlab (string): X-axis label
+  #                 legend_x (double): X coordinate for legend
+  #                 legend_y (double): Y coordinate for legend
+  #                 SPI_to_plot (string): SPI to plot for comparison (OPTIONAL)
+  #                 SPI_to_plot_name (string): Name of SPI to plot for comparison (OPTIONAL)
+
+  #         Returns:
+  #                 p (ggplot): Histogram plot
   p <- p_value_df %>%
     mutate(Significance = ifelse(significant, "Significant SPIs", "Not Sig")) %>%
     ggplot(data=., mapping=aes(x=100*Mean_Accuracy, fill=Significance)) +
@@ -200,6 +229,17 @@ plot_most_discriminative_feature_pair <- function(pyspi_data,
                                                   this_SPI,
                                                   ylabel,
                                                   violin_colors = c("#B384EE", "#E087F8")) {
+  # Plot violin plots of the top feature pair for a given SPI.
+  #         Parameters:
+  #                 pyspi_data (data.frame): Dataframe with SPI values for the given dataset
+  #                 group_classes (data.frame): Dataframe with group labels for the given dataset
+  #                 this_SPI (string): SPI to plot
+  #                 ylabel (string): Y-axis label
+  #                 violin_colors (vector): Colors for the violin plots (OPTIONAL)
+
+  #         Returns:
+  #                 p (ggplot): Violin plot
+
   group_combos <- as.data.frame(t(combn(unique(group_classes), 2))) %>%
     mutate(group_pair = paste0(V1, "__", V2), .keep="unused") %>%
     pull(group_pair)
@@ -294,14 +334,23 @@ plot_most_discriminative_feature_pair(pyspi_data = restfilm_pyspi_data,
 
 
 ################################################################################
-# Plot performance across literature modules
 literature_category_order <- c('basic','distance','causal','infotheory','spectral','misc')
 
-plot_literature_modules <- function(p_value_df, 
+plot_literature_categories <- function(p_value_df, 
                                     y_min, y_max, 
                                     ylab = "Average accuracy (%)",
                                     full_SPI_acc) {
-  set.seed(127)
+  # Plot SPI performance across literature categories as violin plots
+  #         Parameters:
+  #                 p_value_df (data.frame): Dataframe with p-values for the given dataset
+  #                 y_min (numeric): Minimum y-axis value
+  #                 y_max (numeric): Maximum y-axis value
+  #                 ylab (string): Y-axis label
+  #                 full_SPI_acc (numeric): Mean accuracy for the full set of SPIs
+  #         Returns:
+  #                 p (ggplot): Violin plot
+
+  set.seed(127) # For geom_jitter reproducibility
   p <- p_value_df %>%
     left_join(., SPI_Literature_Modules) %>%
     left_join(., SPI_module_colours %>% dplyr::rename("Literature_Module" = "Module") %>% 
@@ -324,19 +373,19 @@ plot_literature_modules <- function(p_value_df,
 }
 
 # BasicMotions
-plot_literature_modules(p_value_df = BasicMotions_SPI_wise_p_values, 
+plot_literature_categories(p_value_df = BasicMotions_SPI_wise_p_values, 
                         y_min = 20, y_max = 100, 
                         ylab = "Average accuracy (%)",
                         full_SPI_acc = 100*BasicMotions_full_p_values$Mean_Accuracy)
 
 # SelfRegulationSCP1
-plot_literature_modules(p_value_df = EEG_SPI_wise_p_values, 
+plot_literature_categories(p_value_df = EEG_SPI_wise_p_values, 
                         y_min = 46, y_max = 72, 
                         ylab = "Average accuracy (%)",
                         full_SPI_acc = 100*EEG_full_p_values$Mean_Accuracy)
 
 # Rest vs Film
-plot_literature_modules(p_value_df = restfilm_SPI_wise_p_values, 
+plot_literature_categories(p_value_df = restfilm_SPI_wise_p_values, 
                         y_min = 40, y_max = 100, 
                         null_quantile = 100*restfilm_null_SPI_wise_top_quantile,
                         ylab = "Average accuracy (%)",
@@ -349,6 +398,16 @@ plot_hclust_modules <- function(p_value_df,
                                 null_quantile,
                                 ylab = "Average accuracy (%)",
                                 full_SPI_acc) {
+  # Plot SPI performance across clustering modules as violin plots
+  #         Parameters:
+  #                 p_value_df (data.frame): Dataframe with p-values for the given dataset
+  #                 y_min (numeric): Minimum y-axis value
+  #                 y_max (numeric): Maximum y-axis value
+  #                 ylab (string): Y-axis label
+  #                 full_SPI_acc (numeric): Mean accuracy for the full set of SPIs
+  #         Returns:
+  #                 p (ggplot): Violin plot
+
   p <- p_value_df %>%
     left_join(., SPI_HClust_Modules) %>%
     left_join(., SPI_module_colours %>% 

@@ -5,12 +5,28 @@ import dill
 import os
 import pyarrow.feather as feather
 
-def merge_calcs_into_df(proc_data_path, 
-                        pkl_file,
-                        pkl_data_path, 
-                        pairwise_feature_set,
+
+def merge_calcs_into_df(dataset_ID,
+                        proc_data_path,
+                        pkl_data_path,
                         proc_lookup_table,
-                        dataset_ID):
+                        pairwise_feature_set = "pyspi",
+                        pkl_file = "calc.pkl"):
+    '''
+    Merge all of the individual calc.pkl files from one dataset into one dataframe
+    and write to a feather file.
+
+            Parameters:
+                    dataset_ID (str): Name of the given dataset to process, e.g. BasicMotions
+                    proc_data_path (str): Path to the processed data folder where output should go
+                    pkl_data_path (str): Path to folder where the individual pickle files are stored
+                    proc_lookup_table (str): Dataframe that links the process name to what it measures in the MTS
+                    pairwise_feature_set (str): Name of the pairwise feature set, e.g. pyspi
+                    pkl_file (str): Name of the output from pyspi-distribute, e.g. calc.pkl
+
+            Returns:
+                    None
+    '''
     
     # Check if feather data file already exists
     if not os.path.isfile(f"{proc_data_path}/{dataset_ID}_{pairwise_feature_set}.feather"):
@@ -66,9 +82,8 @@ def merge_calcs_into_df(proc_data_path,
                 print("Error for " + sample)
                 print(e)
 
-        # Switch brain region indices for region names to/from
+        # Switch process IDs (e.g. proc-0) for names of what those represent in the given MTS (e.g. Channel 1)
         full_pyspi_res = pd.concat(sample_data_list).reset_index()
-        
         full_pyspi_res_lookup = ((pd.merge(full_pyspi_res, 
                                       proc_lookup_table,
                                       how = "left",
@@ -84,53 +99,8 @@ def merge_calcs_into_df(proc_data_path,
                                       .rename(columns={"Node": "Node_to"})
                                       )
 
+        # Write the full merged pyspi data to a feather file for the given dataset
         feather.write_feather(full_pyspi_res_lookup, f"{proc_data_path}/{dataset_ID}_{pairwise_feature_set}.feather", version=1)
-        
-def filter_pyspi_data(proc_data_path,
-                      pairwise_feature_set,
-                        dataset_ID):
-    
-    # Check if feather data file already exists
-    if not os.path.isfile(f"{proc_data_path}/{dataset_ID}_{pairwise_feature_set}_filtered.feather"):
-        raw_pyspi_res = pd.read_feather(f"{proc_data_path}/{dataset_ID}_{pairwise_feature_set}.feather")
-        
-        # Merge data into Channel pairs
-        raw_pyspi_res["Node_Pair"] = raw_pyspi_res.Node_from + "_" + raw_pyspi_res.Node_to
-        
-        # Find number of unique Channel pairs
-        num_Node_pairs = raw_pyspi_res.Node_Pair.nunique()
-        
-        # Find number of unique SPIs
-        num_SPIs = raw_pyspi_res.SPI.nunique()    
-        
-        # Find all NA data
-        all_NA_data = (raw_pyspi_res.loc[pd.isnull(raw_pyspi_res.value)]
-                       .groupby(["Sample_ID", "SPI"])
-                       .count())
-        
-        samples_to_drop = []
-        
-        # Check if there are any samples that yielded all NaN
-        for index, row in all_NA_data.iterrows():
-            sample = index[0]
-            sample_num_NaN_Node_pairs = row["Node_Pair"]
-            
-            # If the number of NaN region pairs for this subject/SPI equals the total
-            # number of unique region pairs, drop that sample ID
-            if sample_num_NaN_Node_pairs == num_Node_pairs:
-                samples_to_drop.append(sample)
-        
-        # Drop any samples retained in samples_to_drop
-        filtered_pyspi_res = (raw_pyspi_res[~raw_pyspi_res.Sample_ID.isin(samples_to_drop)]
-                              .drop(["Node_Pair"], axis=1))
-
-
-        # Save filtered pyspi results to a feather file
-        feather.write_feather(filtered_pyspi_res, f"{proc_data_path}/{dataset_ID}_{pairwise_feature_set}_filtered.feather", version=1)
-       
-# Define higher-level variables
-pkl_file = "calc.pkl"
-pairwise_feature_set = "pyspi"
 
 ##########################################################################################################
 # BasicMotions
@@ -149,10 +119,6 @@ merge_calcs_into_df(proc_data_path = BM_proc_data_path,
                     proc_lookup_table = BM_proc_lookup_table,
                     dataset_ID = BM_dataset_ID)
 
-filter_pyspi_data(proc_data_path = BM_proc_data_path,
-                  dataset_ID = BM_dataset_ID,
-                  pairwise_feature_set = pairwise_feature_set)
-
 ##########################################################################################################
 # SelfRegulationSCP1 EEG
 EEG_data_path = "../data/SelfRegulationSCP1/" # Change if you have your data stored elsewhere
@@ -169,10 +135,6 @@ merge_calcs_into_df(proc_data_path = EEG_proc_data_path,
                     pairwise_feature_set = pairwise_feature_set,
                     proc_lookup_table = EEG_proc_lookup_table,
                     dataset_ID = EEG_dataset_ID)
-
-filter_pyspi_data(proc_data_path = EEG_proc_data_path,
-                  dataset_ID = EEG_dataset_ID,
-                  pairwise_feature_set = pairwise_feature_set)
 
 ##########################################################################################################
 # Rest vs Film fMRI
@@ -191,6 +153,3 @@ merge_calcs_into_df(proc_data_path = fMRI_proc_data_path,
                     proc_lookup_table = fMRI_proc_lookup_table,
                     dataset_ID = fMRI_dataset_ID)
 
-filter_pyspi_data(proc_data_path = fMRI_proc_data_path,
-                  dataset_ID = fMRI_dataset_ID,
-                  pairwise_feature_set = pairwise_feature_set)
