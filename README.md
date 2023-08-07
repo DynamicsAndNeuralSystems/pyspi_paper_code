@@ -1,17 +1,17 @@
-# Code for "Unifying pairwise interactions in complex dynamics"
+# Code for reproducing results presented in "Unifying pairwise interactions in complex dynamics"
 
 [![DOI](https://zenodo.org/badge/651395505.svg)](https://zenodo.org/badge/latestdoi/651395505)
 
 Readme and code in this repo were compiled by @olivercliff (originally published in [https://github.com/olivercliff/pyspi-paper](https://github.com/olivercliff/pyspi-paper)) with additions by @anniegbryant.
 
-This repository illustrates how the figures in the paper, "Unifying pairwise interactions in complex dynamics", were created.
+This repository provides code (and data) to reproduce figures presented in the paper, ["Unifying pairwise interactions in complex dynamics"](https://arxiv.org/abs/2201.11941).
 
-We provide both precomputed CSV files, with which to recreate the figures, as well as scripts to generate these CSVs from scratch.
+We provide both precomputed `.csv` files, with which to recreate the figures, as well as scripts to generate these `.csv` files from scratch.
 
 ## Download pyspi and create an environment
 
 First, download `pyspi` and create a conda environment to install the package [as per the documentation](https://pyspi-toolkit.readthedocs.io/en/latest/).
-In linux, this involves the following steps from a terminal (in your desired directory):
+In a linux environment, this involves the following steps from a terminal (in your desired directory):
 
 ```
 git clone git@github.com:DynamicsAndNeuralSystems/pyspi.git
