@@ -58,7 +58,7 @@ This repository also includes all the code you need to replicate our classificat
 \*The code is structured such that these steps are run as distributed jobs on a high-performance computing (HPC) cluster given the size of the datasets.
 If you do not have access to such a cluster, the code can be adapted to run locally -- however, note that it can take a very long time, depending on your computer specs.
 
-> **NOTE:** [dataset_processing/parse_datasets_for_pyspi.R](https://github.com/DynamicsAndNeuralSystems/pyspi_paper_classification/blob/main/dataset_processing/parse_datasets_for_pyspi.R) and [dataset_processing/parse_datasets_for_pyspi.R](https://github.com/DynamicsAndNeuralSystems/pyspi_paper_classification/blob/main/dataset_processing/call_run_pyspi_distribute.sh) assume you have `pyspi-distribute` installed, and will need to be modified accordingly if not.
+> **NOTE:** [`dataset_processing/parse_datasets_for_pyspi.R`](https://github.com/DynamicsAndNeuralSystems/pyspi_paper_classification/blob/main/dataset_processing/parse_datasets_for_pyspi.R) and [`dataset_processing/parse_datasets_for_pyspi.R`](https://github.com/DynamicsAndNeuralSystems/pyspi_paper_classification/blob/main/dataset_processing/call_run_pyspi_distribute.sh) assume you have `pyspi-distribute` installed, and will need to be modified accordingly if not.
 
 If you would like to skip ahead to visualizing pre-computed results, you may download pre-computed `.feather` files from [zenodo](https://doi.org/10.5281/zenodo.8216295).
 The statistics underlying the visualizations can also be found in the following files:
