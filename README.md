@@ -2,6 +2,8 @@
 
 [![DOI](https://zenodo.org/badge/651395505.svg)](https://zenodo.org/badge/latestdoi/651395505)
 
+Readme and code in this repo were compiled by @olivercliff (originally published in [https://github.com/olivercliff/pyspi-paper](https://github.com/olivercliff/pyspi-paper)) with additions by @anniegbryant.
+
 This repository illustrates how the figures in the paper, "Unifying pairwise interactions in complex dynamics", were created.
 
 We provide both precomputed CSV files, with which to recreate the figures, as well as scripts to generate these CSVs from scratch.
@@ -20,7 +22,7 @@ conda activate pyspi
 
 > **NOTE:** If using the legacy `pynats` branch, please create the conda environment with `python=3.6.7`.
 
-You will also likely need to download and install `octave`; [follow the instructions here](https://octave.org/download).
+You will also need to download and install `octave`; [follow the instructions here](https://octave.org/download).
 
 ## Switch to the `pynats` branch and install
 
