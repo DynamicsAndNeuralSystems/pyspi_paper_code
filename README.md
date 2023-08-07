@@ -39,7 +39,7 @@ pip install .
 
 # Figure 2: Hierarchical clustering for SPI performance on 1053 MTS dataset
 
-Because of the large amount of processing required to generate this figure from scratch, we have provided pre-computed CSV files (in the `data` directory) from which you can easily regenerate the components of Figure 2 using the [`Generate_Figure2_Visuals.ipynb`](https://github.com/DynamicsAndNeuralSystems/pyspi_paper_classification/blob/main//Generate_Figure2_Visuals.ipynb) notebook.
+Because of the large amount of processing required to generate this figure from scratch, we have provided pre-computed CSV files (in the `data` directory) from which you can easily regenerate the components of Figure 2 using the [`Generate_Figure2_Visuals.ipynb`](https://github.com/DynamicsAndNeuralSystems/pyspi_paper_classification/blob/main/Generate_Figure2_visuals.ipynb) notebook.
 
 In order to re-compute the CSV files from the raw MTS data, we have provided the following script:
 [`process_mts_database.py`](https://github.com/DynamicsAndNeuralSystems/pyspi_paper_classification/blob/main/dataset_processing/process_mts_database.py), which computes all SPIs for each of the 1053 MTS datasets in the database.
