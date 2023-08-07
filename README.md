@@ -2,6 +2,8 @@
 
 [![DOI](https://zenodo.org/badge/651395505.svg)](https://zenodo.org/badge/latestdoi/651395505)
 
+Readme and code in this repo were compiled by @olivercliff (originally published in [https://github.com/olivercliff/pyspi-paper](https://github.com/olivercliff/pyspi-paper)) with additions by @anniegbryant.
+
 This repository provides code (and data) to reproduce figures presented in the paper, ["Unifying pairwise interactions in complex dynamics"](https://arxiv.org/abs/2201.11941).
 
 We provide both precomputed `.csv` files, with which to recreate the figures, as well as scripts to generate these `.csv` files from scratch.
@@ -20,7 +22,7 @@ conda activate pyspi
 
 > **NOTE:** If using the legacy `pynats` branch, please create the conda environment with `python=3.6.7`.
 
-You will also likely need to download and install Octave; [follow the instructions here](https://octave.org/download).
+You will also need to download and install `octave`; [follow the instructions here](https://octave.org/download).
 
 ## Switch to the `pynats` branch and install
 
@@ -37,7 +39,7 @@ pip install .
 
 # Figure 2: Hierarchical clustering for SPI performance on 1053 MTS dataset
 
-Because of the large amount of processing required to generate this figure from scratch, we have provided pre-computed CSV files (in the `data` directory) from which you can easily regenerate the components of Figure 2 using the [`Generate_Figure2_Visuals.ipynb`](https://github.com/DynamicsAndNeuralSystems/pyspi_paper_classification/blob/main//Generate_Figure2_Visuals.ipynb) notebook.
+Because of the large amount of processing required to generate this figure from scratch, we have provided pre-computed CSV files (in the `data` directory) from which you can easily regenerate the components of Figure 2 using the [`Generate_Figure2_Visuals.ipynb`](https://github.com/DynamicsAndNeuralSystems/pyspi_paper_classification/blob/main/Generate_Figure2_visuals.ipynb) notebook.
 
 In order to re-compute the CSV files from the raw MTS data, we have provided the following script:
 [`process_mts_database.py`](https://github.com/DynamicsAndNeuralSystems/pyspi_paper_classification/blob/main/dataset_processing/process_mts_database.py), which computes all SPIs for each of the 1053 MTS datasets in the database.
