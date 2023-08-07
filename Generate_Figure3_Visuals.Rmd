@@ -1,3 +1,20 @@
+---
+title: "Visuals for pyspi paper figure 3"
+output: html_document
+date: "2023-08-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=F, warning=F)
+```
+
+
+# Visuals for pyspi paper figure 3
+
+## Configure system
+
+Load necessary packages:
+```{r}
 library(tidyverse)
 library(feather)
 library(glue)
@@ -6,35 +23,32 @@ library(grid)
 library(patchwork)
 library(cowplot)
 theme_set(theme_cowplot())
+```
 
+Define python version to use and import the `feather` function from the `pyarrow` module:
+```{r}
 python_to_use <- "/path/to/your/preferred/installation/of/python3"
 reticulate::use_python(python_to_use)
 
-library(reticulate)
-
 # Import pyarrow.feather as pyarrow_feather
 pyarrow_feather <- import("pyarrow.feather")
+```
 
-# DIY rlist::list.append
-list.append <- function (.data, ...) 
-{
-  if (is.list(.data)) {
-    c(.data, list(...))
-  }
-  else {
-    c(.data, ..., recursive = FALSE)
-  }
-}
+## Load and prepare data
 
-################################################################################
-
-# Load SPI information
-SPI_info <- read.csv("../data/SPI_info.csv")
-SPI_module_colours <- read.csv("../data/SPI_module_colours.csv") %>%
+Load SPI information and colours:
+```{r}
+SPI_info <- read.csv("data/SPI_info.csv")
+SPI_module_colours <- read.csv("data/SPI_module_colours.csv") %>%
   dplyr::select(-X)
 
+SPI_module_colours %>% knitr::kable() %>% kableExtra::kable_styling()
+```
+
+Load the SPI classification performance data per classification problem:
+```{r}
 # BasicMotions
-BasicMotions_data_path <- "../data/pyspi_paper/BasicMotions" # Change this to wherever you store your data for this repo
+BasicMotions_data_path <- "data/BasicMotions" # Change this to wherever you store your data for this repo
 BasicMotions_metadata = pyarrow_feather$read_feather(glue("{BasicMotions_data_path}/BasicMotions_sample_metadata.feather"))
 BasicMotions_TS_data <- pyarrow_feather$read_feather(glue("{BasicMotions_data_path}/processed_data/BasicMotions_TS.feather"))
 BasicMotions_pyspi_data = pyarrow_feather$read_feather(glue("{BasicMotions_data_path}/processed_data/BasicMotions_pyspi_filtered_for_classification.feather")) %>%
@@ -58,7 +72,7 @@ BasicMotions_null_full <- pyarrow_feather$read_feather(glue("{BasicMotions_data_
 
 #############################################
 # SelfRegulationSCP1
-EEG_data_path <- "../data/pyspi_paper/SelfRegulationSCP1" # Change this to wherever you store your data for this repo
+EEG_data_path <- "data/SelfRegulationSCP1" # Change this to wherever you store your data for this repo
 EEG_metadata = pyarrow_feather$read_feather(glue("{EEG_data_path}/SelfRegulationSCP1_sample_metadata.feather"))
 EEG_TS_data <- pyarrow_feather$read_feather(glue("{EEG_data_path}/processed_data/SelfRegulationSCP1_TS.feather"))
 EEG_pyspi_data = pyarrow_feather$read_feather(glue("{EEG_data_path}/processed_data/SelfRegulationSCP1_pyspi_filtered.feather")) %>%
@@ -84,7 +98,7 @@ EEG_null_full <- pyarrow_feather$read_feather(glue("{EEG_data_path}/processed_da
 
 #############################################
 # Rest versus movie watching fMRI
-restfilm_data_path <- "../data/pyspi_paper/Rest_vs_Film_fMRI/" # Change this to wherever you store your data for this repo
+restfilm_data_path <- "data/Rest_vs_Film_fMRI/" # Change this to wherever you store your data for this repo
 restfilm_pyspi_data = pyarrow_feather$read_feather(glue("{restfilm_data_path}/processed_data/Rest_vs_Film_fMRI_pyspi_filtered.feather")) 
 restfilm_TS_data <- pyarrow_feather$read_feather(glue("{restfilm_data_path}/processed_data/Rest_vs_Film_fMRI_fMRI_TS_Yeo7.feather"))
 restfilm_metadata = pyarrow_feather$read_feather(glue("{restfilm_data_path}/Rest_vs_Film_fMRI_metadata.feather")) %>%
@@ -109,7 +123,10 @@ restfilm_main_full_mean <- restfilm_main_full %>%
             SD_Accuracy = sd(Accuracy, na.rm=T))
 restfilm_null_full <- pyarrow_feather$read_feather(glue("{restfilm_data_path}/processed_data/Rest_vs_Film_fMRI_null_full_acc.feather"))
 
-################################################################################
+```
+
+Compute p-values per SPI for each classification problem:
+```{r}
 calculate_p_values <- function(main_res, null_accuracy_df) {
   # Calculate p-values relative to null and apply Bonferroni correction for multiple comparisons.
   #         Parameters:
@@ -151,8 +168,13 @@ restfilm_SPI_wise_p_values <- calculate_p_values(main_res = restfilm_main_SPI_wi
 restfilm_full_p_values <- calculate_p_values(main_res = restfilm_main_full_mean,
                                              null_accuracy_df = restfilm_null_full)
 
-################################################################################
+```
 
+## Visualise data
+
+### Histogram visuals for Figure 3 B,E,H
+
+```{r}
 plot_SPI_histogram <- function(p_value_df, all_SPI_acc, num_bins, x_min, x_max, xlab, legend_x, legend_y, SPI_to_plot=NULL, SPI_to_plot_name=NULL) {
   # Plot histograms of SPI performance individually and with the combination of all SPIs.
   #         Parameters:
@@ -202,18 +224,23 @@ plot_SPI_histogram <- function(p_value_df, all_SPI_acc, num_bins, x_min, x_max, 
   return(p)
 }
 
+
 # BasicMotions
 plot_SPI_histogram(p_value_df = BasicMotions_SPI_wise_p_values, 
                    all_SPI_acc = 100*BasicMotions_full_p_values$Mean_Accuracy, 
                    x_min = 20, x_max = 100, num_bins = 35, xlab="Average accuracy (%)",
                    legend_x = 0.05, legend_y = 0.8)
+```
 
+```{r}
 # SelfRegulationSCP1
 plot_SPI_histogram(p_value_df = EEG_SPI_wise_p_values, 
                    all_SPI_acc = 100*EEG_full_p_values$Mean_Accuracy, 
                    x_min = 45, x_max = 75, num_bins=28, xlab="Average accuracy (%)",
                    legend_x = 0.05, legend_y = 0.8)
+```
 
+```{r}
 # Rest_vs_Film
 plot_SPI_histogram(p_value_df = restfilm_SPI_wise_p_values, 
                    all_SPI_acc = 100*restfilm_full_p_values$Mean_Accuracy, 
@@ -221,8 +248,33 @@ plot_SPI_histogram(p_value_df = restfilm_SPI_wise_p_values,
                    legend_x = 0.05, legend_y = 0.7,
                    SPI_to_plot = "cov_EmpiricalCovariance",
                    SPI_to_plot_name = "Pearson correlation")
+```
 
-################################################################################
+The data underlying these figures can be saved to CSV files for quick reference:
+```{r}
+# All SPIs combined
+do.call(plyr::rbind.fill, list(BasicMotions_full_p_values %>% mutate(Problem = "Smartwatch activity"),
+                               EEG_full_p_values %>% mutate(Problem = "EEG state"),
+                               restfilm_full_p_values %>% mutate(Problem = "fMRI film"))) %>%
+  dplyr::select(Mean_Accuracy, p_value_bonferroni, significant) %>%
+  mutate(Mean_Accuracy = 100*Mean_Accuracy) %>%
+  write.table(., "data/All_combined_SPI_stats_for_Fig3_histogram.csv", row.names = F, col.names = T, sep=",")
+
+# Individual SPIs
+do.call(plyr::rbind.fill, list(BasicMotions_SPI_wise_p_values %>% mutate(Problem = "Smartwatch activity"),
+                               EEG_SPI_wise_p_values %>% mutate(Problem = "EEG state"),
+                               restfilm_SPI_wise_p_values %>% mutate(Problem = "fMRI film"))) %>%
+  dplyr::select(SPI, Mean_Accuracy, p_value_bonferroni, significant) %>%
+  mutate(Mean_Accuracy = 100*Mean_Accuracy) %>%
+  left_join(., SPI_info) %>%
+  write.table(., "data/Individual_SPI_stats_for_Fig3_histogram.csv", row.names = F, col.names = T, sep=",")
+```
+
+
+### Violin plot visuals for Figure 3 C,F,I
+
+Smartwatch activity dataset:
+```{r, warning=F, message=F}
 # Pairwise top feature violin plots
 plot_most_discriminative_feature_pair <- function(pyspi_data, 
                                                   group_classes,
@@ -238,7 +290,8 @@ plot_most_discriminative_feature_pair <- function(pyspi_data,
   #                 violin_colors (vector): Colors for the violin plots (OPTIONAL)
 
   #         Returns:
-  #                 p (ggplot): Violin plot
+  #                 top_t_stat (data.frame): T-statistics for top-differing node combo
+  #                 violin_plot (ggplot): Violin plot
 
   group_combos <- as.data.frame(t(combn(unique(group_classes), 2))) %>%
     mutate(group_pair = paste0(V1, "__", V2), .keep="unused") %>%
@@ -288,15 +341,14 @@ plot_most_discriminative_feature_pair <- function(pyspi_data,
   top_group_combo <- str_split(top_t_stat$Group_Combo, "__")[[1]]
   top_node_combo <- str_split(top_t_stat$Node_Combo, "__")[[1]]
   
-  print(glue("Top group combo: {top_group_combo}"))
-  print(glue("Top node combo: {top_node_combo}"))
-  
   # Plot violins
-  p <- pyspi_data %>%
+  data_to_plot <- pyspi_data %>%
     filter(SPI == this_SPI,
            group %in% top_group_combo,
            Node_from == top_node_combo[1],
-           Node_to == top_node_combo[2]) %>%
+           Node_to == top_node_combo[2])
+  
+  p <- data_to_plot %>%
     ggplot(data=., mapping=aes(x=group, y=value, fill=group)) +
     ylab(ylabel) +
     geom_violin() +
@@ -307,33 +359,57 @@ plot_most_discriminative_feature_pair <- function(pyspi_data,
           axis.text.x = element_text(size=15)) +
     theme(legend.position = "none")
   
-  return(p)
+  return(list(top_t_stat=data_to_plot, violin_plot=p))
   
 }
 
 # # Find all pairwise combinations of activities
-plot_most_discriminative_feature_pair(pyspi_data = BasicMotions_pyspi_data,
+BasicMotions_top_pair <- plot_most_discriminative_feature_pair(pyspi_data = BasicMotions_pyspi_data,
                                       group_classes = BasicMotions_classes,
                                       this_SPI = "cce_kozachenko",
                                       ylabel = "Causally conditioned\nentropy, Kozachenko",
                                       violin_colors = c("#B384EE", "#3564A1"))
+BasicMotions_top_pair$violin_plot
+```
 
+EEG state dataset:
+```{r, warning=F, message=F}
 # EEG SelfRegulationSCP1
-plot_most_discriminative_feature_pair(pyspi_data = EEG_pyspi_data,
+EEG_top_pair <- plot_most_discriminative_feature_pair(pyspi_data = EEG_pyspi_data,
                                       group_classes = EEG_classes,
                                       this_SPI = "cce_gaussian",
                                       ylabel = "Causally conditioned\nentropy, Gaussian",
                                       violin_colors = c(alpha("#3068B8", 0.7), alpha("#BD0005", 0.7)))
-
+EEG_top_pair$violin_plot
+```
+ 
+ 
+fMRI film dataset:
+```{r, message=F, echo=F}
 # Rest vs Film
-plot_most_discriminative_feature_pair(pyspi_data = restfilm_pyspi_data,
+restfilm_top_pair <- plot_most_discriminative_feature_pair(pyspi_data = restfilm_pyspi_data,
                                       group_classes = c("movie", "rest"),
                                       this_SPI = "reci",
                                       ylabel = "RECI",
                                       violin_colors = c("#CC87F8", "#97C777"))
+restfilm_top_pair$violin_plot
+```
 
 
-################################################################################
+The data underlying these figures can be saved to a CSV file for quick reference:
+```{r}
+# Compile CSV file with all this data viewable in one file
+BasicMotions_top_pair$top_t_stat %>%mutate(Problem = "Smartwatch activity") %>%
+  plyr::rbind.fill(., EEG_top_pair$top_t_stat %>% mutate(Problem = "EEG state")) %>%
+  plyr::rbind.fill(., restfilm_top_pair$top_t_stat %>% mutate(Problem = "fMRI film")) %>%
+  select(Problem, group, Sample_ID, SPI, Node_from, Node_to, value)  %>%
+  write.table(., "data/SPI_stats_for_Fig3_violin_plots.csv", row.names = F, col.names = T, sep=",")
+```
+
+
+### Literature category-wise violin plot visuals for Supplementary Figure 3 A,C,E
+
+```{r}
 literature_category_order <- c('basic','distance','causal','infotheory','spectral','misc')
 
 plot_literature_categories <- function(p_value_df, 
@@ -352,12 +428,13 @@ plot_literature_categories <- function(p_value_df,
 
   set.seed(127) # For geom_jitter reproducibility
   p <- p_value_df %>%
-    left_join(., SPI_Literature_Modules) %>%
-    left_join(., SPI_module_colours %>% dplyr::rename("Literature_Module" = "Module") %>% 
-                filter(Module_Type=="Literature")) %>%
-    filter(!is.na(Literature_Module)) %>%
-    mutate(Literature_Module = factor(Literature_Module, levels = literature_category_order)) %>%
-    ggplot(data=., mapping=aes(x=Literature_Module, y=100*Mean_Accuracy)) +
+    left_join(., SPI_info) %>%
+    filter(!is.na(Literature_category)) %>%
+    select(-Module) %>%
+    left_join(., SPI_module_colours %>% filter(Module_Type=="Literature"),
+              by = c("Literature_category" = "Module")) %>%
+    mutate(Literature_category = factor(Literature_category, levels = literature_category_order)) %>%
+    ggplot(data=., mapping=aes(x=Literature_category, y=100*Mean_Accuracy)) +
     geom_violin(aes(fill=Colour), scale="width") +
     scale_fill_identity() +
     geom_jitter(fill=alpha("black", 0.5), color=alpha("black", 0.5), stroke=0.3, width=0.1, size=1) +
@@ -371,27 +448,35 @@ plot_literature_categories <- function(p_value_df,
           axis.text.x = element_blank())
   return(p)
 }
+```
 
-# BasicMotions
+Smartwatch activity dataset:
+```{r}
 plot_literature_categories(p_value_df = BasicMotions_SPI_wise_p_values, 
                         y_min = 20, y_max = 100, 
                         ylab = "Average accuracy (%)",
                         full_SPI_acc = 100*BasicMotions_full_p_values$Mean_Accuracy)
+```
 
-# SelfRegulationSCP1
+EEG state dataset:
+```{r}
 plot_literature_categories(p_value_df = EEG_SPI_wise_p_values, 
                         y_min = 46, y_max = 72, 
                         ylab = "Average accuracy (%)",
                         full_SPI_acc = 100*EEG_full_p_values$Mean_Accuracy)
+```
 
-# Rest vs Film
+fMRI film dataset:
+```{r}
 plot_literature_categories(p_value_df = restfilm_SPI_wise_p_values, 
                         y_min = 40, y_max = 100, 
-                        null_quantile = 100*restfilm_null_SPI_wise_top_quantile,
                         ylab = "Average accuracy (%)",
                         full_SPI_acc = 100*restfilm_full_p_values$Mean_Accuracy)
+```
 
-################################################################################
+### Hierarchical cluster-wise violin plot visuals for Supplementary Figure 3 B,D,F
+
+```{r}
 # Plot performance across hclust modules
 plot_hclust_modules <- function(p_value_df, 
                                 y_min, y_max, 
@@ -409,7 +494,7 @@ plot_hclust_modules <- function(p_value_df,
   #                 p (ggplot): Violin plot
 
   p <- p_value_df %>%
-    left_join(., SPI_HClust_Modules) %>%
+    left_join(., SPI_info) %>%
     left_join(., SPI_module_colours %>% 
                 filter(Module_Type=="HClust")) %>%
     filter(!is.na(Module)) %>%
@@ -430,23 +515,32 @@ plot_hclust_modules <- function(p_value_df,
   return(p)
 }
 
-# BasicMotions
+# The data/SPI_stats_for_Fig3_histogram.csv file contains all data 
+# included in these plots as well
+```
+
+
+Smartwatch activity dataset:
+```{r}
 plot_hclust_modules(p_value_df = BasicMotions_SPI_wise_p_values, 
                     y_min = 20, y_max = 100, 
-                    null_quantile = 100*BasicMotions_null_SPI_wise_top_quantile,
                     ylab = "Average accuracy (%)",
                     full_SPI_acc = 100*BasicMotions_full_p_values$Mean_Accuracy)
+```
 
-# SelfRegulationSCP1
+EEG state dataset:
+```{r}
 plot_hclust_modules(p_value_df = EEG_SPI_wise_p_values, 
                     y_min = 46, y_max = 72, 
-                    null_quantile = 100*EEG_null_SPI_wise_top_quantile,
                     ylab = "Average accuracy (%)",
                     full_SPI_acc = 100*EEG_full_p_values$Mean_Accuracy)
+```
 
-# Rest vs Film
+fMRI film dataset:
+```{r}
 plot_hclust_modules(p_value_df = restfilm_SPI_wise_p_values, 
                     y_min = 40, y_max = 100, 
-                    null_quantile = 100*restfilm_null_SPI_wise_top_quantile,
                     ylab = "Average accuracy (%)",
                     full_SPI_acc = 100*restfilm_full_p_values$Mean_Accuracy)
+```
+
