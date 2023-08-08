@@ -5,22 +5,15 @@ from sklearnex import patch_sklearn
 patch_sklearn()
 
 import pandas as pd
-import sys
 import os
-from math import floor, ceil
-import matplotlib.pyplot as plt
-import seaborn as sns
 import argparse
 import numpy as np
 import pandas as pd
-from copy import copy
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit, permutation_test_score, LeaveOneGroupOut
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score
-import matplotlib as mpl
 
 import warnings
 warnings.filterwarnings("ignore")

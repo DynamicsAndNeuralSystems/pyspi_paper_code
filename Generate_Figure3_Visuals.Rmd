@@ -19,10 +19,9 @@ library(tidyverse)
 library(feather)
 library(glue)
 library(reticulate)
-library(grid)
-library(patchwork)
 library(cowplot)
 theme_set(theme_cowplot())
+require(plyr)
 ```
 
 Define python version to use and import the `feather` function from the `pyarrow` module:
