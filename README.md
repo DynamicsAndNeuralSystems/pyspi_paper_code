@@ -10,7 +10,7 @@ We provide both precomputed `.csv` files, with which to recreate the figures, as
 
 ## Download pyspi and create an environment
 
-First, download `pyspi` and create a conda environment to install the package [as per the documentation](https://pyspi-toolkit.readthedocs.io/en/latest/).
+First, download [`pyspi`](https://github.com/DynamicsAndNeuralSystems/pyspi) and create a conda environment to install the package [as per the documentation](https://pyspi-toolkit.readthedocs.io/en/latest/).
 In a linux environment, this involves the following steps from a terminal (in your desired directory):
 
 ```
