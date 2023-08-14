@@ -25,7 +25,14 @@ require(plyr)
 ```
 
 Define python version to use and import the `feather` function from the `pyarrow` module:
-```{r}
+```{r, echo=F}
+python_to_use <- "/Users/abry4213/anaconda3/envs/pyspi/bin/python3"
+reticulate::use_python(python_to_use)
+
+# Import pyarrow.feather as pyarrow_feather
+pyarrow_feather <- import("pyarrow.feather")
+```
+```{r, eval=F}
 python_to_use <- "/path/to/your/preferred/installation/of/python3"
 reticulate::use_python(python_to_use)
 
@@ -58,14 +65,14 @@ BasicMotions_main_SPI_wise <- pyarrow_feather$read_feather(glue("{BasicMotions_d
 # Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 BasicMotions_main_SPI_wise_mean <- BasicMotions_main_SPI_wise %>%
   group_by(SPI) %>%
-  summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
+  dplyr::summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 BasicMotions_null_SPI_wise <- pyarrow_feather$read_feather(glue("{BasicMotions_data_path}/processed_data/BasicMotions_null_SPI_wise_acc.feather"))
 BasicMotions_main_full <- pyarrow_feather$read_feather(glue("{BasicMotions_data_path}/processed_data/BasicMotions_main_full_acc.feather"))
 
 # Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 BasicMotions_main_full_mean <- BasicMotions_main_full %>%
-  summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
+  dplyr::summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 BasicMotions_null_full <- pyarrow_feather$read_feather(glue("{BasicMotions_data_path}/processed_data/BasicMotions_null_full_acc.feather"))
 
@@ -84,14 +91,14 @@ EEG_main_SPI_wise <- pyarrow_feather$read_feather(glue("{EEG_data_path}/processe
 # Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 EEG_main_SPI_wise_mean <- EEG_main_SPI_wise %>%
   group_by(SPI) %>%
-  summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
+  dplyr::summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 EEG_null_SPI_wise <- pyarrow_feather$read_feather(glue("{EEG_data_path}/processed_data/SelfRegulationSCP1_null_SPI_wise_acc.feather"))
 EEG_main_full <- pyarrow_feather$read_feather(glue("{EEG_data_path}/processed_data/SelfRegulationSCP1_main_full_acc.feather"))
 
 # Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 EEG_main_full_mean <- EEG_main_full %>%
-  summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
+  dplyr::summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 EEG_null_full <- pyarrow_feather$read_feather(glue("{EEG_data_path}/processed_data/SelfRegulationSCP1_null_full_acc.feather"))
 
@@ -111,14 +118,14 @@ restfilm_main_SPI_wise <- pyarrow_feather$read_feather(glue("{restfilm_data_path
 # Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 restfilm_main_SPI_wise_mean <- restfilm_main_SPI_wise %>%
   group_by(SPI) %>%
-  summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
+  dplyr::summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 restfilm_null_SPI_wise <- pyarrow_feather$read_feather(glue("{restfilm_data_path}/processed_data/Rest_vs_Film_fMRI_null_SPI_wise_acc.feather"))
 restfilm_main_full <- pyarrow_feather$read_feather(glue("{restfilm_data_path}/processed_data/Rest_vs_Film_fMRI_main_full_acc.feather"))
 
 # Aggregate the SPI-wise accuracy results across resamples to get a mean and SD estimate
 restfilm_main_full_mean <- restfilm_main_full %>%
-  summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
+  dplyr::summarise(Mean_Accuracy = mean(Accuracy, na.rm = T),
             SD_Accuracy = sd(Accuracy, na.rm=T))
 restfilm_null_full <- pyarrow_feather$read_feather(glue("{restfilm_data_path}/processed_data/Rest_vs_Film_fMRI_null_full_acc.feather"))
 
@@ -138,9 +145,9 @@ calculate_p_values <- function(main_res, null_accuracy_df) {
   null_acc <- null_accuracy_df$Null_Accuracy
   p_res <- main_res %>%
     rowwise() %>%
-    mutate(p_value = 1 - sum(Mean_Accuracy > null_acc) / length(null_acc)) %>%
+    dplyr::mutate(p_value = 1 - sum(Mean_Accuracy > null_acc) / length(null_acc)) %>%
     ungroup() %>%
-    mutate(p_value_bonferroni = p.adjust(p_value, method="bonferroni"),
+    dplyr::mutate(p_value_bonferroni = p.adjust(p_value, method="bonferroni"),
            significant = p_value_bonferroni < 0.05)
   
   return(p_res)
@@ -191,7 +198,7 @@ plot_SPI_histogram <- function(p_value_df, all_SPI_acc, num_bins, x_min, x_max, 
   #         Returns:
   #                 p (ggplot): Histogram plot
   p <- p_value_df %>%
-    mutate(Significance = ifelse(significant, "Significant SPIs", "Not Sig")) %>%
+    dplyr::mutate(Significance = ifelse(significant, "Significant SPIs", "Not Sig")) %>%
     ggplot(data=., mapping=aes(x=100*Mean_Accuracy, fill=Significance)) +
     xlab(xlab) +
     ylab("Proportion") +
@@ -252,21 +259,23 @@ plot_SPI_histogram(p_value_df = restfilm_SPI_wise_p_values,
 The data underlying these figures can be saved to CSV files for quick reference:
 ```{r}
 # All SPIs combined
-do.call(plyr::rbind.fill, list(BasicMotions_full_p_values %>% mutate(Problem = "Smartwatch activity"),
-                               EEG_full_p_values %>% mutate(Problem = "EEG state"),
-                               restfilm_full_p_values %>% mutate(Problem = "fMRI film"))) %>%
-  dplyr::select(Mean_Accuracy, p_value_bonferroni, significant) %>%
-  mutate(Mean_Accuracy = 100*Mean_Accuracy) %>%
-  write.table(., "data/All_combined_SPI_stats_for_Fig3_histogram.csv", row.names = F, col.names = T, sep=",")
+all_SPIs_combined <- do.call(plyr::rbind.fill, list(BasicMotions_full_p_values %>% dplyr::mutate(Problem = "Smartwatch activity"),
+                               EEG_full_p_values %>% dplyr::mutate(Problem = "EEG state"),
+                               restfilm_full_p_values %>% dplyr::mutate(Problem = "fMRI film"))) %>%
+  mutate(SPI = "All") %>%
+  dplyr::select(Problem, SPI, Mean_Accuracy, p_value_bonferroni, significant) %>%
+  dplyr::mutate(Mean_Accuracy = 100*Mean_Accuracy) 
 
 # Individual SPIs
-do.call(plyr::rbind.fill, list(BasicMotions_SPI_wise_p_values %>% mutate(Problem = "Smartwatch activity"),
-                               EEG_SPI_wise_p_values %>% mutate(Problem = "EEG state"),
-                               restfilm_SPI_wise_p_values %>% mutate(Problem = "fMRI film"))) %>%
-  dplyr::select(SPI, Mean_Accuracy, p_value_bonferroni, significant) %>%
-  mutate(Mean_Accuracy = 100*Mean_Accuracy) %>%
-  left_join(., SPI_info) %>%
-  write.table(., "data/Individual_SPI_stats_for_Fig3_histogram.csv", row.names = F, col.names = T, sep=",")
+individual_SPIs <- do.call(plyr::rbind.fill, list(BasicMotions_SPI_wise_p_values %>% dplyr::mutate(Problem = "Smartwatch activity"),
+                               EEG_SPI_wise_p_values %>% dplyr::mutate(Problem = "EEG state"),
+                               restfilm_SPI_wise_p_values %>% dplyr::mutate(Problem = "fMRI film"))) %>%
+  dplyr::mutate(Mean_Accuracy = 100*Mean_Accuracy) %>%
+  left_join(., SPI_info)  %>%
+  dplyr::select(Problem, SPI, Mean_Accuracy, p_value_bonferroni, significant)
+
+# Write to a CSV
+plyr::rbind.fill(all_SPIs_combined, individual_SPIs) %>% write.table(., "data/Cliff_Fig3_histogram_raw_data.csv", row.names = F, col.names = T, sep=",")
 ```
 
 
@@ -293,11 +302,11 @@ plot_most_discriminative_feature_pair <- function(pyspi_data,
   #                 violin_plot (ggplot): Violin plot
 
   group_combos <- as.data.frame(t(combn(unique(group_classes), 2))) %>%
-    mutate(group_pair = paste0(V1, "__", V2), .keep="unused") %>%
+    dplyr::mutate(group_pair = paste0(V1, "__", V2), .keep="unused") %>%
     pull(group_pair)
   
   node_combos <- as.data.frame(t(combn(unique(c(pyspi_data$Node_from,pyspi_data$Node_to)),2))) %>%
-    mutate(node_pair_1 = paste0(V1, "__", V2), 
+    dplyr::mutate(node_pair_1 = paste0(V1, "__", V2), 
            node_pair_2 = paste0(V2, "__", V1), 
            .keep="unused") %>%
     pivot_longer(cols =c(node_pair_1, node_pair_2)) %>%
@@ -317,7 +326,7 @@ plot_most_discriminative_feature_pair <- function(pyspi_data,
         
         combo_data <- pyspi_data %>%
           filter(SPI == this_SPI) %>%
-          mutate(Node_Combo = paste0(Node_from, "__", Node_to)) %>%
+          dplyr::mutate(Node_Combo = paste0(Node_from, "__", Node_to)) %>%
           filter(Node_from == node_one,
                  Node_to == node_two,
                  group %in% c(group_one, 
@@ -398,11 +407,11 @@ restfilm_top_pair$violin_plot
 The data underlying these figures can be saved to a CSV file for quick reference:
 ```{r}
 # Compile CSV file with all this data viewable in one file
-BasicMotions_top_pair$top_t_stat %>%mutate(Problem = "Smartwatch activity") %>%
-  plyr::rbind.fill(., EEG_top_pair$top_t_stat %>% mutate(Problem = "EEG state")) %>%
-  plyr::rbind.fill(., restfilm_top_pair$top_t_stat %>% mutate(Problem = "fMRI film")) %>%
+BasicMotions_top_pair$top_t_stat %>%dplyr::mutate(Problem = "Smartwatch activity") %>%
+  plyr::rbind.fill(., EEG_top_pair$top_t_stat %>% dplyr::mutate(Problem = "EEG state")) %>%
+  plyr::rbind.fill(., restfilm_top_pair$top_t_stat %>% dplyr::mutate(Problem = "fMRI film")) %>%
   select(Problem, group, Sample_ID, SPI, Node_from, Node_to, value)  %>%
-  write.table(., "data/SPI_stats_for_Fig3_violin_plots.csv", row.names = F, col.names = T, sep=",")
+  write.table(., "data/Cliff_Fig3_Violins_raw_data.csv", row.names = F, col.names = T, sep=",")
 ```
 
 
@@ -432,7 +441,7 @@ plot_literature_categories <- function(p_value_df,
     select(-Module) %>%
     left_join(., SPI_module_colours %>% filter(Module_Type=="Literature"),
               by = c("Literature_category" = "Module")) %>%
-    mutate(Literature_category = factor(Literature_category, levels = literature_category_order)) %>%
+    dplyr::mutate(Literature_category = factor(Literature_category, levels = literature_category_order)) %>%
     ggplot(data=., mapping=aes(x=Literature_category, y=100*Mean_Accuracy)) +
     geom_violin(aes(fill=Colour), scale="width") +
     scale_fill_identity() +
