@@ -25,14 +25,8 @@ require(plyr)
 ```
 
 Define python version to use and import the `feather` function from the `pyarrow` module:
-```{r, echo=F}
-python_to_use <- "/Users/abry4213/anaconda3/envs/pyspi/bin/python3"
-reticulate::use_python(python_to_use)
 
-# Import pyarrow.feather as pyarrow_feather
-pyarrow_feather <- import("pyarrow.feather")
-```
-```{r, eval=F}
+```{r}
 python_to_use <- "/path/to/your/preferred/installation/of/python3"
 reticulate::use_python(python_to_use)
 
